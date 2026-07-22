@@ -61,8 +61,6 @@ object KernelDetector {
             localVersion = localVer,
             kernelVersion = kernelVer,
             arch = System.getProperty("os.arch") ?: "aarch64",
-            compiler = "Unknown",
-            hostname = "Unknown",
             uptime = uptime,
             numCpus = cpus,
             cpuArch = Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a",
