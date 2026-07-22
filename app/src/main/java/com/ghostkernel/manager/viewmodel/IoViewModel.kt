@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.ghostkernel.manager.data.BootPrefs
 import com.ghostkernel.manager.data.SysFsManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -26,7 +29,6 @@ class IoViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
-            val devices = mutableListOf<IoDevice>()
             var blockNames = listOf<String>()
             try {
                 val p = Runtime.getRuntime().exec(arrayOf("su", "-c", "ls /sys/block"))
@@ -34,24 +36,26 @@ class IoViewModel(application: Application) : AndroidViewModel(application) {
                 blockNames = reader.readLines().map { it.trim() }.filter {
                     it.isNotEmpty() && !it.startsWith("loop") && !it.startsWith("ram") && !it.startsWith("dm-")
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
             }
 
+            val devices = coroutineScope {
+                blockNames.map { name ->
+                    async {
+                        val schedStr = SysFsManager.read("/sys/block/$name/queue/scheduler")
+                        if (schedStr.isEmpty()) return@async null
 
-            for (name in blockNames) {
+                        val raDeferred = async { SysFsManager.read("/sys/block/$name/queue/read_ahead_kb") }
 
-                val schedStr = SysFsManager.read("/sys/block/$name/queue/scheduler")
-                if (schedStr.isEmpty()) continue
+                        val current = schedStr.split("[")
+                            .getOrNull(1)?.split("]")?.firstOrNull()?.trim()
+                            ?: schedStr.split(" ").firstOrNull()?.trim() ?: "none"
+                        val available = schedStr.replace("[", "").replace("]", "").split(" ").filter { it.isNotEmpty() }
+                        val ra = raDeferred.await().toIntOrNull() ?: 128
 
-                val current = schedStr.split("[")
-                    .getOrNull(1)?.split("]")?.firstOrNull()?.trim()
-                    ?: schedStr.split(" ").firstOrNull()?.trim() ?: "none"
-                val available = schedStr.replace("[", "").replace("]", "").split(" ").filter { it.isNotEmpty() }
-
-                val raStr = SysFsManager.read("/sys/block/$name/queue/read_ahead_kb")
-                val ra = raStr.toIntOrNull() ?: 128
-
-                devices.add(IoDevice(name, current, available, ra))
+                        IoDevice(name, current, available, ra)
+                    }
+                }.awaitAll().filterNotNull()
             }
             _devices.value = devices
         }

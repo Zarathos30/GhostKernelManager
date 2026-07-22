@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.ghostkernel.manager.data.BootPrefs
 import com.ghostkernel.manager.data.SysFsManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -39,34 +42,41 @@ class CpuViewModel(application: Application) : AndroidViewModel(application) {
                     } else listOf(range.toIntOrNull() ?: 0)
                 }.distinct()
 
-            val clusters = mutableMapOf<Int, MutableList<Int>>()
+            val clusterMap = mutableMapOf<Int, MutableList<Int>>()
             possible.forEach { cpu ->
                 try {
                     val policy = SysFsManager.read("$cpuPath/cpu$cpu/cpufreq/related_cpus")
                         .ifEmpty { SysFsManager.read("$cpuPath/cpu$cpu/cpufreq/affected_cpus") }
                         .ifEmpty { "$cpu" }
-
                     val firstCpu = policy.split(" ").firstOrNull { it.isNotEmpty() }?.toIntOrNull() ?: cpu
-                    clusters.getOrPut(firstCpu) { mutableListOf() }.add(cpu)
-                } catch (e: Exception) {
-                    clusters.getOrPut(cpu) { mutableListOf() }.add(cpu)
+                    clusterMap.getOrPut(firstCpu) { mutableListOf() }.add(cpu)
+                } catch (_: Exception) {
+                    clusterMap.getOrPut(cpu) { mutableListOf() }.add(cpu)
                 }
             }
 
-            val clusterList = clusters.entries.mapIndexed { idx, (leader, cpus) ->
-                val govPath = "$cpuPath/cpu$leader/cpufreq"
-                val governor = SysFsManager.read("$govPath/scaling_governor")
-                val availGov = SysFsManager.read("$govPath/scaling_available_governors")
-                    .split(" ").filter { it.isNotEmpty() }
+            val clusterList = coroutineScope {
+                clusterMap.entries.mapIndexed { idx, (leader, cpus) ->
+                    async {
+                        val govPath = "$cpuPath/cpu$leader/cpufreq"
+                        val governorDeferred = async { SysFsManager.read("$govPath/scaling_governor") }
+                        val availGovDeferred = async { SysFsManager.read("$govPath/scaling_available_governors") }
+                        val minFreqDeferred = async { SysFsManager.read("$govPath/scaling_min_freq") }
+                        val maxFreqDeferred = async { SysFsManager.read("$govPath/scaling_max_freq") }
+                        val curFreqDeferred = async { SysFsManager.read("$govPath/scaling_cur_freq") }
+                        val availFreqDeferred = async { SysFsManager.read("$govPath/scaling_available_frequencies") }
 
-                val minFreq = SysFsManager.read("$govPath/scaling_min_freq").toLongOrNull() ?: 0L
-                val maxFreq = SysFsManager.read("$govPath/scaling_max_freq").toLongOrNull() ?: 0L
-                val curFreq = SysFsManager.read("$govPath/scaling_cur_freq").toLongOrNull()
-                    ?: SysFsManager.read("$govPath/cpuinfo_cur_freq").toLongOrNull() ?: 0L
-                val availFreq = SysFsManager.read("$govPath/scaling_available_frequencies")
-                    .split(" ").mapNotNull { it.toLongOrNull() }.filter { it > 0 }
+                        val governor = governorDeferred.await()
+                        val availGov = availGovDeferred.await().split(" ").filter { it.isNotEmpty() }
+                        val minFreq = minFreqDeferred.await().toLongOrNull() ?: 0L
+                        val maxFreq = maxFreqDeferred.await().toLongOrNull() ?: 0L
+                        val curFreq = curFreqDeferred.await().toLongOrNull() ?: 0L
+                        val availFreq = availFreqDeferred.await()
+                            .split(" ").mapNotNull { it.toLongOrNull() }.filter { it > 0 }
 
-                CpuCluster(idx, cpus, governor, availGov, minFreq, maxFreq, curFreq, availFreq)
+                        CpuCluster(idx, cpus, governor, availGov, minFreq, maxFreq, curFreq, availFreq)
+                    }
+                }.awaitAll()
             }
 
             _clusters.value = clusterList

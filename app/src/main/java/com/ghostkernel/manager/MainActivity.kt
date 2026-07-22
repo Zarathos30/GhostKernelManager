@@ -21,12 +21,13 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ghostkernel.manager.data.KernelDetector
-import com.ghostkernel.manager.data.SysFsManager
 import com.ghostkernel.manager.ui.navigation.NavGraph
 import com.ghostkernel.manager.ui.navigation.Screen
 import com.ghostkernel.manager.ui.screens.ContentCard
 import com.ghostkernel.manager.ui.theme.*
+import com.ghostkernel.manager.viewmodel.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -79,6 +80,12 @@ fun MainUI() {
             }
         }
         1 -> {
+            val dashboardVm: DashboardViewModel = viewModel()
+            val cpuVm: CpuViewModel = viewModel()
+            val gpuVm: GpuViewModel = viewModel()
+            val ioVm: IoViewModel = viewModel()
+            val tcpVm: TcpViewModel = viewModel()
+
             val navController = rememberNavController()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
@@ -132,7 +139,7 @@ fun MainUI() {
                 containerColor = GhostBlack
             ) { paddingValues ->
                 Box(modifier = Modifier.padding(paddingValues)) {
-                    NavGraph(navController)
+                    NavGraph(navController, dashboardVm, cpuVm, gpuVm, ioVm, tcpVm)
                 }
             }
         }

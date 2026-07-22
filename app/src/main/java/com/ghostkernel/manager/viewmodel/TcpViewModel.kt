@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.ghostkernel.manager.data.BootPrefs
 import com.ghostkernel.manager.data.SysFsManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -22,9 +25,13 @@ class TcpViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
-            _current.value = SysFsManager.read("/proc/sys/net/ipv4/tcp_congestion_control")
-            _available.value = SysFsManager.read("/proc/sys/net/ipv4/tcp_available_congestion_control")
-                .split(" ").filter { it.isNotEmpty() }
+            coroutineScope {
+                val currentDeferred = async { SysFsManager.read("/proc/sys/net/ipv4/tcp_congestion_control") }
+                val availableDeferred = async { SysFsManager.read("/proc/sys/net/ipv4/tcp_available_congestion_control") }
+                _current.value = currentDeferred.await()
+                _available.value = availableDeferred.await()
+                    .split(" ").filter { it.isNotEmpty() }
+            }
         }
     }
 

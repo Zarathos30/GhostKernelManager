@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.ghostkernel.manager.data.BootPrefs
 import com.ghostkernel.manager.data.SysFsManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -38,36 +41,56 @@ class GpuViewModel(application: Application) : AndroidViewModel(application) {
                 "/sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0",
             )
 
-            for (base in paths) {
-                val govPath = "$base/devfreq/governor"
-                val availGovPath = "$base/devfreq/available_governors"
-                val gov = SysFsManager.read(govPath)
-                if (gov.isNotEmpty()) {
-                    _gpuPath.value = "$base/devfreq"
-                    val availGov = SysFsManager.read(availGovPath).split(" ").filter { it.isNotEmpty() }
-                    val minFreq = SysFsManager.read("$base/devfreq/min_freq").toLongOrNull() ?: 0L
-                    val maxFreq = SysFsManager.read("$base/devfreq/max_freq").toLongOrNull() ?: 0L
-                    val curFreq = SysFsManager.read("$base/devfreq/cur_freq").toLongOrNull() ?: 0L
-                    val availFreq = SysFsManager.read("$base/devfreq/available_frequencies")
-                        .split(" ").mapNotNull { it.toLongOrNull() }.filter { it > 0 }
+            val result = coroutineScope {
+                paths.map { base ->
+                    async {
+                        val govPath = "$base/devfreq/governor"
+                        val gov = SysFsManager.read(govPath)
+                        if (gov.isEmpty()) return@async null
 
-                    _gpu.value = GpuInfo("Adreno", gov, availGov, minFreq, maxFreq, curFreq, availFreq)
-                    return@launch
-                }
+                        val availGovDeferred = async { SysFsManager.read("$base/devfreq/available_governors") }
+                        val minFreqDeferred = async { SysFsManager.read("$base/devfreq/min_freq") }
+                        val maxFreqDeferred = async { SysFsManager.read("$base/devfreq/max_freq") }
+                        val curFreqDeferred = async { SysFsManager.read("$base/devfreq/cur_freq") }
+                        val availFreqDeferred = async { SysFsManager.read("$base/devfreq/available_frequencies") }
+
+                        val availGov = availGovDeferred.await().split(" ").filter { it.isNotEmpty() }
+                        val minFreq = minFreqDeferred.await().toLongOrNull() ?: 0L
+                        val maxFreq = maxFreqDeferred.await().toLongOrNull() ?: 0L
+                        val curFreq = curFreqDeferred.await().toLongOrNull() ?: 0L
+                        val availFreq = availFreqDeferred.await()
+                            .split(" ").mapNotNull { it.toLongOrNull() }.filter { it > 0 }
+
+                        GpuInfo("Adreno", gov, availGov, minFreq, maxFreq, curFreq, availFreq) to "$base/devfreq"
+                    }
+                }.awaitAll().filterNotNull().firstOrNull()
             }
 
-            // Try simpler paths
-            for (base in paths) {
-                val gov = SysFsManager.read("$base/gpu_governor")
-                    .ifEmpty { SysFsManager.read("$base/governor") }
-                if (gov.isNotEmpty()) {
-                    _gpuPath.value = base
-                    _gpu.value = GpuInfo("Adreno", gov, emptyList(), 0, 0, 0, emptyList())
-                    return@launch
-                }
+            if (result != null) {
+                val (info, devfreqPath) = result
+                _gpuPath.value = devfreqPath
+                _gpu.value = info
+                return@launch
             }
 
-            _gpu.value = null
+            val fallback = coroutineScope {
+                paths.map { base ->
+                    async {
+                        val gov = SysFsManager.read("$base/gpu_governor")
+                            .ifEmpty { SysFsManager.read("$base/governor") }
+                        if (gov.isNotEmpty()) GpuInfo("Adreno", gov, emptyList(), 0, 0, 0, emptyList()) to base
+                        else null
+                    }
+                }.awaitAll().filterNotNull().firstOrNull()
+            }
+
+            if (fallback != null) {
+                val (info, base) = fallback
+                _gpuPath.value = base
+                _gpu.value = info
+            } else {
+                _gpu.value = null
+            }
         }
     }
 
