@@ -31,7 +31,7 @@ class TcpViewModel(application: Application) : AndroidViewModel(application) {
     fun setAlgorithm(alg: String) {
         viewModelScope.launch(Dispatchers.IO) {
             SysFsManager.write("/proc/sys/net/ipv4/tcp_congestion_control", alg)
-            refresh()
+            _current.value = alg
         }
     }
 
