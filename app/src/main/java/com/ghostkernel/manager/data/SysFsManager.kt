@@ -30,6 +30,13 @@ object SysFsManager {
 
     fun read(path: String): String {
         return try {
+            if (path.startsWith("/proc")) {
+                val process = Runtime.getRuntime().exec(arrayOf("cat", path))
+                val reader = BufferedReader(InputStreamReader(process.inputStream))
+                val text = reader.readText().trim()
+                Log.d(TAG, "read(proc:$path) = ${text.take(80)}")
+                return text
+            }
             if (!needsRoot(path)) {
                 val text = java.io.File(path).readText().trim()
                 Log.d(TAG, "read($path) = ${text.take(80)}")
@@ -42,13 +49,20 @@ object SysFsManager {
             Log.d(TAG, "read(su:$path) = ${text.take(80)}")
             text
         } catch (e: Exception) {
-            Log.e(TAG, "read($path): exception", e)
+            Log.e(TAG, "read($path): ${e.message}")
             ""
         }
     }
 
     fun readLines(path: String): List<String> {
         return try {
+            if (path.startsWith("/proc")) {
+                val process = Runtime.getRuntime().exec(arrayOf("cat", path))
+                val reader = BufferedReader(InputStreamReader(process.inputStream))
+                val lines = reader.readLines().map { it.trim() }.filter { it.isNotEmpty() }
+                Log.d(TAG, "readLines(proc:$path) = ${lines.size} lines")
+                return lines
+            }
             if (!needsRoot(path)) {
                 val lines = java.io.File(path).readLines().map { it.trim() }.filter { it.isNotEmpty() }
                 Log.d(TAG, "readLines($path) = ${lines.size} lines")
@@ -61,7 +75,7 @@ object SysFsManager {
             Log.d(TAG, "readLines(su:$path) = ${lines.size} lines")
             lines
         } catch (e: Exception) {
-            Log.e(TAG, "readLines($path): exception", e)
+            Log.e(TAG, "readLines($path): ${e.message}")
             emptyList()
         }
     }
