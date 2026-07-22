@@ -52,7 +52,13 @@ object KernelDetector {
 
         val soc = try {
             val cpuinfo = SysFsManager.readLines("/proc/cpuinfo")
-            val hw = cpuinfo.firstOrNull { it.startsWith("Hardware") }?.substringAfter(":")?.trim()
+            var hw = cpuinfo.firstOrNull { it.startsWith("Hardware") }?.substringAfter(":")?.trim()
+            if (hw.isNullOrEmpty() || hw == "qcom") {
+                hw = cpuinfo.firstOrNull { it.startsWith("model name") }?.substringAfter(":")?.trim()
+            }
+            if (hw.isNullOrEmpty() || hw == "qcom") {
+                hw = cpuinfo.firstOrNull { it.startsWith("Processor") }?.substringAfter(":")?.trim()
+            }
             hw?.ifEmpty { null } ?: Build.HARDWARE ?: "Unknown"
         } catch (e: Exception) { Build.HARDWARE ?: "Unknown" }
 

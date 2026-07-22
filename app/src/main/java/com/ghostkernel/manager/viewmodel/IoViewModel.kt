@@ -1,6 +1,7 @@
 package com.ghostkernel.manager.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ghostkernel.manager.data.BootPrefs
@@ -26,18 +27,31 @@ class IoViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
+            val devices = mutableListOf<IoDevice>()
             val blockDir = java.io.File("/sys/block")
-            val devices = (blockDir.listFiles() ?: emptyArray()).mapNotNull { dir ->
+            val dirs = blockDir.listFiles() ?: emptyArray()
+            Log.d("GhostKM-IO", "Found ${dirs.size} block devices")
+
+            for (dir in dirs) {
                 val name = dir.name
-                val schedFile = java.io.File(dir, "queue/scheduler")
-                if (!schedFile.exists()) return@mapNotNull null
-                val schedStr = SysFsManager.read(schedFile.absolutePath)
-                val parts = schedStr.replace("[", "").replace("]", "").split(" ")
-                val available = schedStr.split(" ").map { it.replace("[", "").replace("]", "") }.filter { it.isNotEmpty() }
+                if (name.startsWith("loop") || name.startsWith("ram") || name.startsWith("dm-")) continue
+
+                val schedStr = SysFsManager.read("/sys/block/$name/queue/scheduler")
+                if (schedStr.isEmpty()) {
+                    Log.d("GhostKM-IO", "$name: scheduler empty, skipping")
+                    continue
+                }
+
                 val current = schedStr.split("[")
-                    .getOrNull(1)?.split("]")?.firstOrNull()?.trim() ?: parts.firstOrNull() ?: "none"
-                val ra = SysFsManager.read("${dir.absolutePath}/queue/read_ahead_kb").toIntOrNull() ?: 128
-                IoDevice(name, current, available, ra)
+                    .getOrNull(1)?.split("]")?.firstOrNull()?.trim()
+                    ?: schedStr.split(" ").firstOrNull()?.trim() ?: "none"
+                val available = schedStr.replace("[", "").replace("]", "").split(" ").filter { it.isNotEmpty() }
+
+                val raStr = SysFsManager.read("/sys/block/$name/queue/read_ahead_kb")
+                val ra = raStr.toIntOrNull() ?: 128
+
+                Log.d("GhostKM-IO", "$name: scheduler=$current, avail=$available, ra=$ra")
+                devices.add(IoDevice(name, current, available, ra))
             }
             _devices.value = devices
         }
@@ -45,16 +59,14 @@ class IoViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setScheduler(device: String, scheduler: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val path = "/sys/block/$device/queue/scheduler"
-            SysFsManager.write(path, scheduler)
+            SysFsManager.write("/sys/block/$device/queue/scheduler", scheduler)
             refresh()
         }
     }
 
     fun setReadAhead(device: String, kb: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            val path = "/sys/block/$device/queue/read_ahead_kb"
-            SysFsManager.write(path, kb.toString())
+            SysFsManager.write("/sys/block/$device/queue/read_ahead_kb", kb.toString())
             refresh()
         }
     }
