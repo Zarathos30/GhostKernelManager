@@ -2,14 +2,19 @@ package com.ghostkernel.manager.data
 
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.util.concurrent.TimeUnit
 
 object SysFsManager {
 
     fun isRootAvailable(): Boolean {
         return try {
             val process = Runtime.getRuntime().exec("su -c echo root_ok")
-            val exitCode = process.waitFor()
-            exitCode == 0
+            val exited = process.waitFor(5, TimeUnit.SECONDS)
+            if (!exited) {
+                process.destroyForcibly()
+                return false
+            }
+            process.exitValue() == 0
         } catch (e: Exception) {
             false
         }
