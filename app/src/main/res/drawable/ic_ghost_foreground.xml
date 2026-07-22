@@ -4,7 +4,7 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Background circuit lines -->
+    <!-- Background -->
     <path
         android:fillColor="#1A1A2E"
         android:pathData="M0,0 L108,0 L108,108 L0,108 Z"/>
@@ -12,22 +12,26 @@
     <path
         android:fillColor="#00E5FF"
         android:pathData="M54,20 C40,20 30,30 30,48 L30,68 C30,78 30,84 36,88 L36,76 C36,76 38,82 42,78 C46,82 50,76 54,76 C58,76 62,82 66,78 C70,82 72,76 72,76 L72,88 C78,84 78,78 78,68 L78,48 C78,30 68,20 54,20 Z"/>
-    <!-- Eyes -->
+    <!-- Evil eyes (angled) -->
     <path
         android:fillColor="#0A0A0F"
-        android:pathData="M44,42 A3.5,3.5 0 1,0 44,41.99 Z"/>
+        android:pathData="M40,40 L48,44 L44,38 Z"/>
     <path
         android:fillColor="#0A0A0F"
-        android:pathData="M64,42 A3.5,3.5 0 1,0 64,41.99 Z"/>
-    <!-- CPU chip lines -->
+        android:pathData="M68,40 L60,44 L64,38 Z"/>
+    <!-- Red glowing pupils -->
     <path
-        android:strokeColor="#00E5FF"
-        android:strokeWidth="1.5"
-        android:fillColor="#00000000"
-        android:pathData="M48,54 L52,54 L52,58 L56,58 L56,54 L60,54"/>
+        android:fillColor="#CF6679"
+        android:pathData="M43,41 A1.5,1.5 0 1,0 43,40.99 Z"/>
     <path
-        android:strokeColor="#00E5FF"
-        android:strokeWidth="1.5"
-        android:fillColor="#00000000"
-        android:pathData="M48,62 L52,62 L52,66 L56,66 L56,62 L60,62"/>
+        android:fillColor="#CF6679"
+        android:pathData="M63,41 A1.5,1.5 0 1,0 63,40.99 Z"/>
+    <!-- Demonic grin -->
+    <path
+        android:fillColor="#0A0A0F"
+        android:pathData="M44,52 Q48,48 54,50 Q60,48 64,52 Q60,56 54,54 Q48,56 44,52 Z"/>
+    <!-- Sharp fangs -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,50 L47,55 L48,49 L49,55 L50,49 L51,54 L52,49 L53,53 L54,49 L55,53 L56,49 L57,54 L58,49 L59,55 L60,49 L61,55 L62,50 Z"/>
 </vector>
