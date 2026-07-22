@@ -19,7 +19,6 @@ import com.ghostkernel.manager.viewmodel.DashboardViewModel
 fun DashboardScreen(vm: DashboardViewModel) {
     val info by vm.kernelInfo.collectAsState()
     val isGhost by vm.isGhostKernel.collectAsState()
-    val root by vm.rootAvailable.collectAsState()
 
     LaunchedEffect(Unit) { vm.refresh() }
 
@@ -38,16 +37,7 @@ fun DashboardScreen(vm: DashboardViewModel) {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 ContentCard {
                     Column(Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("GhostKernel", style = MaterialTheme.typography.headlineMedium, color = GhostCyan)
-                            Spacer(Modifier.weight(1f))
-                            Surface(shape = MaterialTheme.shapes.small, color = if (root) GhostGreen.copy(alpha = 0.15f) else GhostRed.copy(alpha = 0.15f)) {
-                                Text(if (root) " ROOT " else " NO ROOT ",
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (root) GhostGreen else GhostRed)
-                            }
-                        }
+                        Text("GhostKernel", style = MaterialTheme.typography.headlineMedium, color = GhostCyan)
                         Spacer(Modifier.height(4.dp))
                         Text("v${info.kernelVersion}", style = MaterialTheme.typography.bodyMedium, color = GhostGray)
                     }

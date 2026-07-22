@@ -27,7 +27,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
             _isGhostKernel.value = KernelDetector.isGhostKernel()
-            _rootAvailable.value = SysFsManager.isRootAvailable()
             if (_isGhostKernel.value) {
                 _kernelInfo.value = KernelDetector.getInfo()
             }
