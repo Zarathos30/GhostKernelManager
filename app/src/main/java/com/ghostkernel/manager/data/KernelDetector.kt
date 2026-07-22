@@ -33,6 +33,19 @@ object KernelDetector {
         val soc: String
     )
 
+    private fun resolveSoc(name: String): String {
+        val map = mapOf(
+            "tuna" to "Snapdragon 8s Gen 4 (SM8735)",
+            "pineapple" to "Snapdragon 8 Gen 3 (SM8650)",
+            "kalama" to "Snapdragon 8 Gen 2 (SM8550)",
+            "taro" to "Snapdragon 8 Gen 1 (SM8450)",
+            "lahaina" to "Snapdragon 888 (SM8350)",
+            "kona" to "Snapdragon 865 (SM8250)",
+            "cliffs" to "Snapdragon 8s Gen 3 (SM8635)",
+        )
+        return map[name.lowercase()] ?: name
+    }
+
     fun getInfo(): KernelInfo {
         val osVer = System.getProperty("os.version") ?: "Unknown"
         val kernelVer = osVer.split("-").firstOrNull()?.trim() ?: osVer
@@ -76,7 +89,7 @@ object KernelDetector {
             uptime = uptime,
             numCpus = cpus,
             cpuArch = Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a",
-            soc = soc
+            soc = resolveSoc(soc)
         )
     }
 }
