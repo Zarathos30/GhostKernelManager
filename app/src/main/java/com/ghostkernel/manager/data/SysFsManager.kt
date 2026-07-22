@@ -22,11 +22,11 @@ object SysFsManager {
 
     fun read(path: String): String {
         return try {
-            val process = if (path.startsWith("/proc") || path.startsWith("/sys/class") && !needsRoot(path)) {
-                Runtime.getRuntime().exec(arrayOf("cat", path))
-            } else {
-                Runtime.getRuntime().exec(arrayOf("su", "-c", "cat $path"))
+            if (!needsRoot(path)) {
+                return java.io.File(path).readText().trim()
             }
+            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "cat $path"))
+            process.waitFor(5, TimeUnit.SECONDS)
             val reader = BufferedReader(InputStreamReader(process.inputStream))
             reader.readText().trim()
         } catch (e: Exception) {
@@ -36,11 +36,11 @@ object SysFsManager {
 
     fun readLines(path: String): List<String> {
         return try {
-            val process = if (path.startsWith("/proc") || !needsRoot(path)) {
-                Runtime.getRuntime().exec(arrayOf("cat", path))
-            } else {
-                Runtime.getRuntime().exec(arrayOf("su", "-c", "cat $path"))
+            if (!needsRoot(path)) {
+                return java.io.File(path).readLines().map { it.trim() }.filter { it.isNotEmpty() }
             }
+            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "cat $path"))
+            process.waitFor(5, TimeUnit.SECONDS)
             val reader = BufferedReader(InputStreamReader(process.inputStream))
             reader.readLines().map { it.trim() }.filter { it.isNotEmpty() }
         } catch (e: Exception) {

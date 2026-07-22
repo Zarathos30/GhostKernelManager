@@ -6,9 +6,10 @@ object KernelDetector {
 
     fun isGhostKernel(): Boolean {
         val version = SysFsManager.read("/proc/version")
-        return version.contains("GhostKernel", ignoreCase = true) ||
-               version.contains("Kono-Ha", ignoreCase = true) ||
-               version.contains("ghost", ignoreCase = true)
+        val osVer = System.getProperty("os.version") ?: ""
+        val combined = "$version $osVer"
+        return combined.contains("GhostKernel", ignoreCase = true) ||
+               combined.contains("Kono-Ha", ignoreCase = true)
     }
 
     data class KernelInfo(
