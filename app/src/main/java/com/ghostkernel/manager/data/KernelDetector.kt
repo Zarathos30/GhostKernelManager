@@ -59,6 +59,12 @@ object KernelDetector {
             if (hw.isNullOrEmpty() || hw == "qcom") {
                 hw = cpuinfo.firstOrNull { it.startsWith("Processor") }?.substringAfter(":")?.trim()
             }
+            if (hw.isNullOrEmpty() || hw == "qcom") {
+                val platform = SysFsManager.read("/sys/devices/soc0/soc_id")
+                    .ifEmpty { SysFsManager.read("/sys/devices/soc0/machine") }
+                    .ifEmpty { SysFsManager.read("/sys/firmware/devicetree/base/model") }
+                if (platform.isNotEmpty()) hw = platform
+            }
             hw?.ifEmpty { null } ?: Build.HARDWARE ?: "Unknown"
         } catch (e: Exception) { Build.HARDWARE ?: "Unknown" }
 

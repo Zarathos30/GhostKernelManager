@@ -28,13 +28,19 @@ class IoViewModel(application: Application) : AndroidViewModel(application) {
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
             val devices = mutableListOf<IoDevice>()
-            val blockDir = java.io.File("/sys/block")
-            val dirs = blockDir.listFiles() ?: emptyArray()
-            Log.d("GhostKM-IO", "Found ${dirs.size} block devices")
+            var blockNames = listOf<String>()
+            try {
+                val p = Runtime.getRuntime().exec(arrayOf("su", "-c", "ls /sys/block"))
+                val reader = java.io.BufferedReader(java.io.InputStreamReader(p.inputStream))
+                blockNames = reader.readLines().map { it.trim() }.filter {
+                    it.isNotEmpty() && !it.startsWith("loop") && !it.startsWith("ram") && !it.startsWith("dm-")
+                }
+            } catch (e: Exception) {
+                Log.e("GhostKM-IO", "Failed to list /sys/block", e)
+            }
+            Log.d("GhostKM-IO", "Found ${blockNames.size} block devices: $blockNames")
 
-            for (dir in dirs) {
-                val name = dir.name
-                if (name.startsWith("loop") || name.startsWith("ram") || name.startsWith("dm-")) continue
+            for (name in blockNames) {
 
                 val schedStr = SysFsManager.read("/sys/block/$name/queue/scheduler")
                 if (schedStr.isEmpty()) {
