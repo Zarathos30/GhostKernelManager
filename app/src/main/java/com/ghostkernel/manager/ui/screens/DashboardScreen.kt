@@ -52,8 +52,6 @@ fun DashboardScreen(vm: DashboardViewModel) {
                         InfoRow("Architecture", info.cpuArch)
                         InfoRow("CPU Cores", info.numCpus.toString())
                         InfoRow("SoC", info.soc)
-                        InfoRow("Compiler", info.compiler)
-                        InfoRow("Host", info.hostname)
                         InfoRow("Uptime", info.uptime)
                     }
                 }

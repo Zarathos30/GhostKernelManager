@@ -15,7 +15,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     companion object { private const val TAG = "GhostKM-Dashboard" }
 
-    private val _kernelInfo = MutableStateFlow(KernelDetector.KernelInfo("", "", "", "", "", "", "", 0, "", ""))
+    private val _kernelInfo = MutableStateFlow(KernelDetector.KernelInfo("", "", "", "", "", 0, "", ""))
     val kernelInfo: StateFlow<KernelDetector.KernelInfo> = _kernelInfo
 
     private val _isGhostKernel = MutableStateFlow(false)
