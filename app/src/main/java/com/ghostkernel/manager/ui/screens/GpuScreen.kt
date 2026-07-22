@@ -3,8 +3,6 @@ package com.ghostkernel.manager.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -18,7 +16,7 @@ fun GpuScreen(vm: GpuViewModel) {
     LaunchedEffect(Unit) { vm.refresh() }
 
     Column(Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
-        Text("GPU Control", style = MaterialTheme.typography.headlineMedium, color = GhostCyan)
+        Text("GPU Info", style = MaterialTheme.typography.headlineMedium, color = GhostCyan)
         Spacer(Modifier.height(16.dp))
 
         val info = gpu
@@ -33,80 +31,46 @@ fun GpuScreen(vm: GpuViewModel) {
         } else {
             val freqText = { freq: Long ->
                 if (freq >= 1_000_000_000) "${"%.2f".format(freq / 1_000_000_000f)} GHz"
-                else if (freq >= 1_000_000) "${freq / 1_000_000} MHz"
-                else freq.toString()
+                else "${freq / 1_000_000} MHz"
             }
 
             ContentCard {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(info.model, style = MaterialTheme.typography.titleMedium, color = GhostCyan)
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Adreno GPU", style = MaterialTheme.typography.titleMedium, color = GhostCyan)
+                    InfoRow("Governor", info.governor)
+                    InfoRow("Current Freq", freqText(info.curFreq))
+                    InfoRow("Min Freq", freqText(info.minFreq))
+                    InfoRow("Max Freq", freqText(info.maxFreq))
+                }
+            }
 
-                    // Governor
-                    if (info.availableGovernors.isNotEmpty()) {
-                        var govExpanded by remember { mutableStateOf(false) }
-                        Text("Governor", style = MaterialTheme.typography.bodySmall, color = GhostGray)
-                        Box {
-                            OutlinedButton(onClick = { govExpanded = true },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = GhostWhite)) {
-                                Text(info.governor, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                                Icon(Icons.Default.KeyboardArrowDown, contentDescription = null)
-                            }
-                            DropdownMenu(expanded = govExpanded, onDismissRequest = { govExpanded = false }) {
-                                info.availableGovernors.forEach { gov ->
-                                    DropdownMenuItem(
-                                        text = { Text(gov, style = MaterialTheme.typography.bodyMedium) },
-                                        onClick = { govExpanded = false; vm.setGovernor(gov) }
-                                    )
+            if (info.availableFrequencies.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                ContentCard {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Available Frequencies", style = MaterialTheme.typography.titleSmall, color = GhostCyan)
+                        Spacer(Modifier.height(8.dp))
+                        info.availableFrequencies.chunked(3).forEach { row ->
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                row.forEach { freq ->
+                                    Surface(
+                                        shape = MaterialTheme.shapes.small,
+                                        color = GhostCardBg,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            freqText(freq),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = GhostAmber
+                                        )
+                                    }
+                                }
+                                repeat(3 - row.size) {
+                                    Spacer(Modifier.weight(1f))
                                 }
                             }
-                        }
-                    } else {
-                        Text("Governor: ${info.governor}", style = MaterialTheme.typography.bodyMedium, color = GhostWhite)
-                    }
-
-                    // Frequencies
-                    if (info.curFreq > 0) {
-                        Text("Current: ${freqText(info.curFreq)}", style = MaterialTheme.typography.bodyMedium, color = GhostAmber)
-                    }
-
-                    if (info.availableFrequencies.isNotEmpty()) {
-                        var minExpanded by remember { mutableStateOf(false) }
-                        Text("Min Frequency", style = MaterialTheme.typography.bodySmall, color = GhostGray)
-                        Box {
-                            OutlinedButton(onClick = { minExpanded = true },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = GhostWhite)) {
-                                Text(freqText(info.minFreq), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                                Icon(Icons.Default.KeyboardArrowDown, contentDescription = null)
-                            }
-                            DropdownMenu(expanded = minExpanded, onDismissRequest = { minExpanded = false }) {
-                                info.availableFrequencies.forEach { f ->
-                                    DropdownMenuItem(
-                                        text = { Text(freqText(f), style = MaterialTheme.typography.bodyMedium) },
-                                        onClick = { minExpanded = false; vm.setMinFreq(f) }
-                                    )
-                                }
-                            }
-                        }
-
-                        var maxExpanded by remember { mutableStateOf(false) }
-                        Text("Max Frequency", style = MaterialTheme.typography.bodySmall, color = GhostGray)
-                        Box {
-                            OutlinedButton(onClick = { maxExpanded = true },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = GhostWhite)) {
-                                Text(freqText(info.maxFreq), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                                Icon(Icons.Default.KeyboardArrowDown, contentDescription = null)
-                            }
-                            DropdownMenu(expanded = maxExpanded, onDismissRequest = { maxExpanded = false }) {
-                                info.availableFrequencies.forEach { f ->
-                                    DropdownMenuItem(
-                                        text = { Text(freqText(f), style = MaterialTheme.typography.bodyMedium) },
-                                        onClick = { maxExpanded = false; vm.setMaxFreq(f) }
-                                    )
-                                }
-                            }
+                            Spacer(Modifier.height(4.dp))
                         }
                     }
                 }
