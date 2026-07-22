@@ -27,6 +27,7 @@ import com.ghostkernel.manager.ui.screens.ContentCard
 import com.ghostkernel.manager.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,11 +54,20 @@ fun MainUI() {
     var denyReason by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            val root = SysFsManager.isRootAvailable()
-            val ghost = KernelDetector.isGhostKernel()
+        val result = withTimeoutOrNull(10_000L) {
+            withContext(Dispatchers.IO) {
+                val root = SysFsManager.isRootAvailable()
+                val ghost = KernelDetector.isGhostKernel()
+                Pair(root, ghost)
+            }
+        }
+        if (result == null) {
+            denyReason = "Timed out.\nMake sure you have a root manager (Magisk/KernelSU/APatch) and grant su access."
+            accessState = 2
+        } else {
+            val (root, ghost) = result
             if (!root) {
-                denyReason = "Root access not available.\nThis app requires su access."
+                denyReason = "Root access not available.\nThis app requires su access.\nMake sure you granted root permissions."
                 accessState = 2
             } else if (!ghost) {
                 denyReason = "GhostKernel not detected.\nThis app only works with GhostKernel."
