@@ -1,10 +1,13 @@
 package com.ghostkernel.manager
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -51,10 +54,13 @@ data class BottomNavItem(
 fun MainUI() {
     var accessState by remember { mutableStateOf(0) } // 0=checking, 1=granted, 2=denied
     var denyReason by remember { mutableStateOf("") }
+    var debugInfo by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             val ghost = KernelDetector.isGhostKernel()
+            debugInfo = KernelDetector.getVersionDebug()
+            Log.d("GhostKernelApp", debugInfo)
             if (!ghost) {
                 denyReason = "GhostKernel not detected.\nThis app only works with GhostKernel."
                 accessState = 2
@@ -133,7 +139,7 @@ fun MainUI() {
             }
         }
         2 -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
                 ContentCard {
                     Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("⛔", style = MaterialTheme.typography.headlineLarge)
@@ -141,11 +147,14 @@ fun MainUI() {
                         Text("Access Denied", style = MaterialTheme.typography.titleLarge, color = GhostRed)
                         Spacer(Modifier.height(12.dp))
                         Text(denyReason, style = MaterialTheme.typography.bodyMedium, color = GhostGray)
+                        Spacer(Modifier.height(12.dp))
+                        Text(debugInfo, style = MaterialTheme.typography.bodySmall, color = GhostCyanDim)
                         Spacer(Modifier.height(16.dp))
                         Button(
                             onClick = {
                                 accessState = 0
                                 denyReason = ""
+                                debugInfo = ""
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = GhostCyanDim)
                         ) {

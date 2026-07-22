@@ -1,15 +1,28 @@
 package com.ghostkernel.manager.data
 
 import android.os.Build
+import android.util.Log
 
 object KernelDetector {
+
+    private const val TAG = "GhostKernelDetector"
 
     fun isGhostKernel(): Boolean {
         val version = SysFsManager.read("/proc/version")
         val osVer = System.getProperty("os.version") ?: ""
+        Log.d(TAG, "/proc/version = $version")
+        Log.d(TAG, "os.version = $osVer")
         val combined = "$version $osVer"
-        return combined.contains("GhostKernel", ignoreCase = true) ||
+        val detected = combined.contains("GhostKernel", ignoreCase = true) ||
                combined.contains("Kono-Ha", ignoreCase = true)
+        Log.d(TAG, "GhostKernel detected = $detected")
+        return detected
+    }
+
+    fun getVersionDebug(): String {
+        val version = SysFsManager.read("/proc/version")
+        val osVer = System.getProperty("os.version") ?: ""
+        return "/proc/version: $version\nos.version: $osVer"
     }
 
     data class KernelInfo(
