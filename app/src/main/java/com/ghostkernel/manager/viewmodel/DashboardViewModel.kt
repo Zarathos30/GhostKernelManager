@@ -4,7 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.ghostkernel.manager.data.BootPrefs
+import com.ghostkernel.manager.data.KernelDetector
 import com.ghostkernel.manager.data.SysFsManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
