@@ -33,6 +33,13 @@ object KernelDetector {
         val soc: String
     )
 
+    private fun getProp(key: String): String {
+        return try {
+            val p = Runtime.getRuntime().exec(arrayOf("getprop", key))
+            p.inputStream.bufferedReader().readText().trim()
+        } catch (e: Exception) { "" }
+    }
+
     private fun resolveSoc(name: String): String {
         val map = mapOf(
             "tuna" to "Snapdragon 8s Gen 4 (SM8735)",
@@ -64,21 +71,18 @@ object KernelDetector {
         val cpus = Runtime.getRuntime().availableProcessors()
 
         val soc = try {
-            val cpuinfo = SysFsManager.readLines("/proc/cpuinfo")
-            var hw = cpuinfo.firstOrNull { it.startsWith("Hardware") }?.substringAfter(":")?.trim()
-            if (hw.isNullOrEmpty() || hw == "qcom") {
-                hw = cpuinfo.firstOrNull { it.startsWith("model name") }?.substringAfter(":")?.trim()
+            var hw = getProp("ro.soc.model")
+            if (hw.isEmpty()) {
+                val cpuinfo = SysFsManager.readLines("/proc/cpuinfo")
+                hw = cpuinfo.firstOrNull { it.startsWith("Hardware") }?.substringAfter(":")?.trim() ?: ""
             }
-            if (hw.isNullOrEmpty() || hw == "qcom") {
-                hw = cpuinfo.firstOrNull { it.startsWith("Processor") }?.substringAfter(":")?.trim()
+            if (hw.isEmpty() || hw == "qcom") {
+                hw = SysFsManager.read("/sys/devices/soc0/machine")
             }
-            if (hw.isNullOrEmpty() || hw == "qcom") {
-                val platform = SysFsManager.read("/sys/devices/soc0/soc_id")
-                    .ifEmpty { SysFsManager.read("/sys/devices/soc0/machine") }
-                    .ifEmpty { SysFsManager.read("/sys/firmware/devicetree/base/model") }
-                if (platform.isNotEmpty()) hw = platform
+            if (hw.isEmpty()) {
+                hw = SysFsManager.read("/sys/devices/soc0/soc_id")
             }
-            hw?.ifEmpty { null } ?: Build.HARDWARE ?: "Unknown"
+            hw.ifEmpty { Build.HARDWARE ?: "Unknown" }
         } catch (e: Exception) { Build.HARDWARE ?: "Unknown" }
 
         return KernelInfo(
