@@ -22,7 +22,14 @@ object KernelDetector {
     fun getVersionDebug(): String {
         val version = SysFsManager.read("/proc/version")
         val osVer = System.getProperty("os.version") ?: ""
-        return "/proc/version: $version\nos.version: $osVer"
+        val kernelVer = SysFsManager.read("/proc/sys/kernel/version")
+        val hostname = SysFsManager.read("/proc/sys/kernel/hostname")
+        val unameR = try {
+            val p = Runtime.getRuntime().exec(arrayOf("uname", "-r"))
+            p.waitFor()
+            p.inputStream.bufferedReader().readText().trim()
+        } catch (e: Exception) { "error" }
+        return "uname -r: $unameR\n/proc/version: ${version.take(100)}\nos.version: $osVer\nkernel.version: $kernelVer\nhostname: $hostname"
     }
 
     data class KernelInfo(
