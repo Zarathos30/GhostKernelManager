@@ -2,19 +2,13 @@ package com.ghostkernel.manager.data
 
 import android.os.Build
 import android.os.SystemClock
-import android.util.Log
 
 object KernelDetector {
 
-    private const val TAG = "GhostKernelDetector"
-
     fun isGhostKernel(): Boolean {
         val osVer = System.getProperty("os.version") ?: ""
-        Log.d(TAG, "os.version = $osVer")
-        val detected = osVer.contains("GhostKernel", ignoreCase = true) ||
+        return osVer.contains("GhostKernel", ignoreCase = true) ||
                osVer.contains("Kono-Ha", ignoreCase = true)
-        Log.d(TAG, "GhostKernel detected = $detected")
-        return detected
     }
 
     fun getVersionDebug(): String {

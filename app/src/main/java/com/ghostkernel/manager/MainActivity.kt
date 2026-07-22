@@ -1,7 +1,6 @@
 package com.ghostkernel.manager
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -60,7 +59,6 @@ fun MainUI() {
         withContext(Dispatchers.IO) {
             val ghost = KernelDetector.isGhostKernel()
             debugInfo = KernelDetector.getVersionDebug()
-            Log.d("GhostKernelApp", debugInfo)
             if (!ghost) {
                 denyReason = "GhostKernel not detected.\nThis app only works with GhostKernel."
                 accessState = 2

@@ -1,7 +1,6 @@
 package com.ghostkernel.manager.viewmodel
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ghostkernel.manager.data.BootPrefs
@@ -36,17 +35,13 @@ class IoViewModel(application: Application) : AndroidViewModel(application) {
                     it.isNotEmpty() && !it.startsWith("loop") && !it.startsWith("ram") && !it.startsWith("dm-")
                 }
             } catch (e: Exception) {
-                Log.e("GhostKM-IO", "Failed to list /sys/block", e)
             }
-            Log.d("GhostKM-IO", "Found ${blockNames.size} block devices: $blockNames")
+
 
             for (name in blockNames) {
 
                 val schedStr = SysFsManager.read("/sys/block/$name/queue/scheduler")
-                if (schedStr.isEmpty()) {
-                    Log.d("GhostKM-IO", "$name: scheduler empty, skipping")
-                    continue
-                }
+                if (schedStr.isEmpty()) continue
 
                 val current = schedStr.split("[")
                     .getOrNull(1)?.split("]")?.firstOrNull()?.trim()
@@ -56,7 +51,6 @@ class IoViewModel(application: Application) : AndroidViewModel(application) {
                 val raStr = SysFsManager.read("/sys/block/$name/queue/read_ahead_kb")
                 val ra = raStr.toIntOrNull() ?: 128
 
-                Log.d("GhostKM-IO", "$name: scheduler=$current, avail=$available, ra=$ra")
                 devices.add(IoDevice(name, current, available, ra))
             }
             _devices.value = devices
