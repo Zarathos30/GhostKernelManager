@@ -4,17 +4,13 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Ghost shape -->
     <path
         android:fillColor="#00E5FF"
-        android:pathData="M34,30 L34,70 Q34,82 46,82 L62,82 Q74,82 74,70 L74,30 Z"/>
-    <!-- Eyes -->
-    <path android:fillColor="#0A0A0F"
-        android:pathData="M44,42 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
-    <path android:fillColor="#0A0A0F"
-        android:pathData="M60,42 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
-    <!-- Bottom bumps -->
+        android:pathData="M54,20 C34,20 22,34 22,52 L22,68 C22,78 22,82 28,86 L28,76 C28,76 32,82 36,78 C40,82 44,76 48,78 C52,80 56,80 60,78 C64,76 68,82 72,78 C76,82 80,76 80,76 L80,86 C86,82 86,78 86,68 L86,52 C86,34 74,20 54,20 Z"/>
     <path
-        android:fillColor="#00E5FF"
-        android:pathData="M38,80 Q42,74 46,80 Q50,74 54,80 Q58,74 62,80 Q66,74 70,80 L70,82 Q70,82 62,82 L46,82 Q34,82 34,70 L34,80 Q34,84 38,80 Z"/>
+        android:fillColor="#0A0A0F"
+        android:pathData="M42,42 A4,4 0 1,0 42,41.99 Z"/>
+    <path
+        android:fillColor="#0A0A0F"
+        android:pathData="M66,42 A4,4 0 1,0 66,41.99 Z"/>
 </vector>
