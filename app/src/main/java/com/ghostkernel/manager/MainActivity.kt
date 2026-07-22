@@ -23,6 +23,7 @@ import com.ghostkernel.manager.data.KernelDetector
 import com.ghostkernel.manager.data.SysFsManager
 import com.ghostkernel.manager.ui.navigation.NavGraph
 import com.ghostkernel.manager.ui.navigation.Screen
+import com.ghostkernel.manager.ui.screens.ContentCard
 import com.ghostkernel.manager.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
