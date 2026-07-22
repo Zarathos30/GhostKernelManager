@@ -42,13 +42,20 @@ object KernelDetector {
 
     private fun resolveSoc(name: String): String {
         val map = mapOf(
-            "tuna" to "Snapdragon 8s Gen 4 (SM8735)",
-            "pineapple" to "Snapdragon 8 Gen 3 (SM8650)",
-            "kalama" to "Snapdragon 8 Gen 2 (SM8550)",
-            "taro" to "Snapdragon 8 Gen 1 (SM8450)",
-            "lahaina" to "Snapdragon 888 (SM8350)",
-            "kona" to "Snapdragon 865 (SM8250)",
-            "cliffs" to "Snapdragon 8s Gen 3 (SM8635)",
+            "sm8735" to "Snapdragon 8s Gen 4",
+            "tuna" to "Snapdragon 8s Gen 4",
+            "sm8650" to "Snapdragon 8 Gen 3",
+            "pineapple" to "Snapdragon 8 Gen 3",
+            "sm8635" to "Snapdragon 8s Gen 3",
+            "cliffs" to "Snapdragon 8s Gen 3",
+            "sm8550" to "Snapdragon 8 Gen 2",
+            "kalama" to "Snapdragon 8 Gen 2",
+            "sm8450" to "Snapdragon 8 Gen 1",
+            "taro" to "Snapdragon 8 Gen 1",
+            "sm8350" to "Snapdragon 888",
+            "lahaina" to "Snapdragon 888",
+            "sm8250" to "Snapdragon 865",
+            "kona" to "Snapdragon 865",
         )
         return map[name.lowercase()] ?: name
     }
