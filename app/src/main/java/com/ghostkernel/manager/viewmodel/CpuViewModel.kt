@@ -77,6 +77,7 @@ class CpuViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val path = "/sys/devices/system/cpu/cpu$leaderCpu/cpufreq/scaling_governor"
             SysFsManager.write(path, governor)
+            saveBoot(leaderCpu, "governor", governor)
             _clusters.value = _clusters.value.map { c ->
                 if (c.cpus.first() == leaderCpu) c.copy(governor = governor) else c
             }
@@ -87,6 +88,7 @@ class CpuViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val path = "/sys/devices/system/cpu/cpu$leaderCpu/cpufreq/scaling_min_freq"
             SysFsManager.write(path, freq.toString())
+            saveBoot(leaderCpu, "min_freq", freq.toString())
             _clusters.value = _clusters.value.map { c ->
                 if (c.cpus.first() == leaderCpu) c.copy(minFreq = freq) else c
             }
@@ -97,6 +99,7 @@ class CpuViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val path = "/sys/devices/system/cpu/cpu$leaderCpu/cpufreq/scaling_max_freq"
             SysFsManager.write(path, freq.toString())
+            saveBoot(leaderCpu, "max_freq", freq.toString())
             _clusters.value = _clusters.value.map { c ->
                 if (c.cpus.first() == leaderCpu) c.copy(maxFreq = freq) else c
             }

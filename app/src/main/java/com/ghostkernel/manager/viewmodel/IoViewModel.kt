@@ -66,6 +66,7 @@ class IoViewModel(application: Application) : AndroidViewModel(application) {
     fun setScheduler(device: String, scheduler: String) {
         viewModelScope.launch(Dispatchers.IO) {
             SysFsManager.write("/sys/block/$device/queue/scheduler", scheduler)
+            saveBoot(device, "scheduler", scheduler)
             _devices.value = _devices.value.map { d ->
                 if (d.name == device) d.copy(scheduler = scheduler) else d
             }
@@ -75,6 +76,7 @@ class IoViewModel(application: Application) : AndroidViewModel(application) {
     fun setReadAhead(device: String, kb: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             SysFsManager.write("/sys/block/$device/queue/read_ahead_kb", kb.toString())
+            saveBoot(device, "read_ahead_kb", kb.toString())
             _devices.value = _devices.value.map { d ->
                 if (d.name == device) d.copy(readAheadKb = kb) else d
             }
