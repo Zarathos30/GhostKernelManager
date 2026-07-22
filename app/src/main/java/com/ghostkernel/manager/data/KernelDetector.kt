@@ -20,16 +20,9 @@ object KernelDetector {
     }
 
     fun getVersionDebug(): String {
-        val version = SysFsManager.read("/proc/version")
         val osVer = System.getProperty("os.version") ?: ""
-        val kernelVer = SysFsManager.read("/proc/sys/kernel/version")
-        val hostname = SysFsManager.read("/proc/sys/kernel/hostname")
-        val unameR = try {
-            val p = Runtime.getRuntime().exec(arrayOf("uname", "-r"))
-            p.waitFor()
-            p.inputStream.bufferedReader().readText().trim()
-        } catch (e: Exception) { "error" }
-        return "uname -r: $unameR\n/proc/version: ${version.take(100)}\nos.version: $osVer\nkernel.version: $kernelVer\nhostname: $hostname"
+        val version = SysFsManager.read("/proc/version")
+        return "os.version: $osVer\n/proc/version: ${version.ifEmpty { "(permission denied)" }}"
     }
 
     data class KernelInfo(
@@ -46,44 +39,47 @@ object KernelDetector {
     )
 
     fun getInfo(): KernelInfo {
-        val version = SysFsManager.read("/proc/version")
-        val parts = version.split(" ")
-        val kernelVer = parts.getOrElse(0) { "Unknown" }
-        val localVer = if (version.contains("GhostKernel")) "GhostKernel"
-            else if (version.contains("Kono-Ha")) "Kono-Ha-Kernel"
+        val osVer = System.getProperty("os.version") ?: "Unknown"
+        val kernelVer = osVer.split("-").firstOrNull()?.trim() ?: osVer
+
+        val localVer = if (osVer.contains("GhostKernel", ignoreCase = true)) "GhostKernel"
+            else if (osVer.contains("Kono-Ha", ignoreCase = true)) "Kono-Ha-Kernel"
             else kernelVer
 
-        val compiler = parts.dropWhile { it != "(gcc" && it != "(clang" && it != "(aosp" && it != "(neutron" }
-            .take(4).joinToString(" ").removePrefix("(").removeSuffix(")")
+        val version = SysFsManager.read("/proc/version")
+        val parts = version.split(" ")
+        val compiler = if (version.isNotEmpty()) {
+            parts.dropWhile { it != "(gcc" && it != "(clang" && it != "(aosp" && it != "(neutron" }
+                .take(4).joinToString(" ").removePrefix("(").removeSuffix(")")
+        } else "Unknown"
 
-        val hostname = parts.dropWhile { it != "(gcc" && !it.startsWith("(") || it == "(gcc" }.drop(1)
-            .let { rest ->
-                val idx = rest.indexOfFirst { it == ")" }
-                if (idx >= 0) rest.take(idx).joinToString(" ") else "Unknown"
-            }
+        val hostname = if (version.isNotEmpty()) {
+            parts.dropWhile { it != "(gcc" && !it.startsWith("(") || it == "(gcc" }.drop(1)
+                .let { rest ->
+                    val idx = rest.indexOfFirst { it == ")" }
+                    if (idx >= 0) rest.take(idx).joinToString(" ") else "Unknown"
+                }
+        } else "Unknown"
 
         val uptime = try {
             val up = SysFsManager.read("/proc/uptime").split(" ").firstOrNull()?.toDoubleOrNull() ?: 0.0
-            val hours = (up / 3600).toInt()
-            val mins = ((up % 3600) / 60).toInt()
-            "${hours}h ${mins}m"
+            if (up > 0) {
+                val hours = (up / 3600).toInt()
+                val mins = ((up % 3600) / 60).toInt()
+                "${hours}h ${mins}m"
+            } else "N/A"
         } catch (e: Exception) { "N/A" }
 
-        val cpus = SysFsManager.read("/sys/devices/system/cpu/possible")
-            .split(",").flatMap { range ->
-                if (range.contains("-")) {
-                    val (start, end) = range.split("-").map { it.toIntOrNull() ?: 0 }
-                    (start..end).toList()
-                } else listOf(range.toIntOrNull() ?: 0)
-            }.distinct().size
+        val cpus = Runtime.getRuntime().availableProcessors()
 
         val soc = try {
             val cpuinfo = SysFsManager.readLines("/proc/cpuinfo")
-            cpuinfo.firstOrNull { it.startsWith("Hardware") }?.substringAfter(":")?.trim() ?: Build.HARDWARE
-        } catch (e: Exception) { Build.HARDWARE }
+            val hw = cpuinfo.firstOrNull { it.startsWith("Hardware") }?.substringAfter(":")?.trim()
+            hw?.ifEmpty { null } ?: Build.HARDWARE ?: "Unknown"
+        } catch (e: Exception) { Build.HARDWARE ?: "Unknown" }
 
         return KernelInfo(
-            fullVersion = version,
+            fullVersion = osVer,
             localVersion = localVer,
             kernelVersion = kernelVer,
             arch = System.getProperty("os.arch") ?: "aarch64",
