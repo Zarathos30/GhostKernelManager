@@ -17,7 +17,7 @@ import com.ghostkernel.manager.viewmodel.DashboardViewModel
 @Composable
 fun BootScreen(context: Context, vm: DashboardViewModel) {
     val prefs = remember { BootPrefs(context) }
-    val count = prefs.getAll().size
+    var count by remember { mutableIntStateOf(prefs.getAll().size) }
     val info by vm.kernelInfo.collectAsState()
     val isGhost by vm.isGhostKernel.collectAsState()
 
@@ -41,6 +41,7 @@ fun BootScreen(context: Context, vm: DashboardViewModel) {
                 Button(
                     onClick = {
                         prefs.clear()
+                        count = 0
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = GhostRed.copy(alpha = 0.3f))
