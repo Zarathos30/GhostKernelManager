@@ -17,7 +17,7 @@ import com.ghostkernel.manager.viewmodel.DashboardViewModel
 @Composable
 fun BootScreen(context: Context, vm: DashboardViewModel) {
     val prefs = remember { BootPrefs(context) }
-    var count by remember { mutableIntStateOf(prefs.getAll().size) }
+    val count = prefs.getAll().size
     val info by vm.kernelInfo.collectAsState()
     val isGhost by vm.isGhostKernel.collectAsState()
 
@@ -31,9 +31,9 @@ fun BootScreen(context: Context, vm: DashboardViewModel) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Saved Boot Settings: $count",
                     style = MaterialTheme.typography.bodyMedium, color = GhostAmber)
-                Text("Settings are applied automatically at boot via a receiver.",
+                Text("Settings are saved automatically when you change CPU/IO/TCP values.",
                     style = MaterialTheme.typography.bodySmall, color = GhostGray)
-                Text("Use the save buttons in CPU/GPU/I/O/TCP tabs to add settings.",
+                Text("They will be reapplied after a reboot.",
                     style = MaterialTheme.typography.bodySmall, color = GhostGray)
 
                 Spacer(Modifier.height(8.dp))
@@ -41,7 +41,6 @@ fun BootScreen(context: Context, vm: DashboardViewModel) {
                 Button(
                     onClick = {
                         prefs.clear()
-                        count = 0
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = GhostRed.copy(alpha = 0.3f))
