@@ -30,6 +30,14 @@ object SysFsManager {
 
     fun read(path: String): String {
         return try {
+            if (needsRoot(path)) {
+                val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "cat $path"))
+                process.waitFor(5, TimeUnit.SECONDS)
+                val reader = BufferedReader(InputStreamReader(process.inputStream))
+                val text = reader.readText().trim()
+                Log.d(TAG, "read(su:$path) = ${text.take(80)}")
+                return text
+            }
             if (path.startsWith("/proc")) {
                 val process = Runtime.getRuntime().exec(arrayOf("cat", path))
                 val reader = BufferedReader(InputStreamReader(process.inputStream))
@@ -37,16 +45,8 @@ object SysFsManager {
                 Log.d(TAG, "read(proc:$path) = ${text.take(80)}")
                 return text
             }
-            if (!needsRoot(path)) {
-                val text = java.io.File(path).readText().trim()
-                Log.d(TAG, "read($path) = ${text.take(80)}")
-                return text
-            }
-            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "cat $path"))
-            process.waitFor(5, TimeUnit.SECONDS)
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
-            val text = reader.readText().trim()
-            Log.d(TAG, "read(su:$path) = ${text.take(80)}")
+            val text = java.io.File(path).readText().trim()
+            Log.d(TAG, "read($path) = ${text.take(80)}")
             text
         } catch (e: Exception) {
             Log.e(TAG, "read($path): ${e.message}")
@@ -56,6 +56,14 @@ object SysFsManager {
 
     fun readLines(path: String): List<String> {
         return try {
+            if (needsRoot(path)) {
+                val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "cat $path"))
+                process.waitFor(5, TimeUnit.SECONDS)
+                val reader = BufferedReader(InputStreamReader(process.inputStream))
+                val lines = reader.readLines().map { it.trim() }.filter { it.isNotEmpty() }
+                Log.d(TAG, "readLines(su:$path) = ${lines.size} lines")
+                return lines
+            }
             if (path.startsWith("/proc")) {
                 val process = Runtime.getRuntime().exec(arrayOf("cat", path))
                 val reader = BufferedReader(InputStreamReader(process.inputStream))
@@ -63,16 +71,8 @@ object SysFsManager {
                 Log.d(TAG, "readLines(proc:$path) = ${lines.size} lines")
                 return lines
             }
-            if (!needsRoot(path)) {
-                val lines = java.io.File(path).readLines().map { it.trim() }.filter { it.isNotEmpty() }
-                Log.d(TAG, "readLines($path) = ${lines.size} lines")
-                return lines
-            }
-            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "cat $path"))
-            process.waitFor(5, TimeUnit.SECONDS)
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
-            val lines = reader.readLines().map { it.trim() }.filter { it.isNotEmpty() }
-            Log.d(TAG, "readLines(su:$path) = ${lines.size} lines")
+            val lines = java.io.File(path).readLines().map { it.trim() }.filter { it.isNotEmpty() }
+            Log.d(TAG, "readLines($path) = ${lines.size} lines")
             lines
         } catch (e: Exception) {
             Log.e(TAG, "readLines($path): ${e.message}")
@@ -94,6 +94,6 @@ object SysFsManager {
     }
 
     private fun needsRoot(path: String): Boolean {
-        return !path.startsWith("/proc")
+        return !path.startsWith("/proc") || path.startsWith("/proc/sys")
     }
 }
